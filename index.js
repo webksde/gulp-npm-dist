@@ -45,11 +45,12 @@ module.exports = function (config) {
   var nodeModulesPath = config.nodeModulesPath || false;
   var packageJsonPath = config.packageJsonPath || false;
   var excludes = config.excludes || [];
+  var copyFullRepo = config.copyFullRepo || false;
 
   var workingDir = process.cwd();
   var nodeModDir = nodeModulesPath ? path.join(workingDir, nodeModulesPath) : '.';
   var packageJsonFile = packageJsonPath ? path.join(workingDir, packageJsonPath, 'package.json') : 'package.json';
-  
+
   var buffer = fs.readFileSync(packageJsonFile);
   var packageJson = JSON.parse(buffer.toString());
   var packages = [];
@@ -62,21 +63,45 @@ module.exports = function (config) {
     var mainFileDir = path.join(nodeModDir, 'node_modules', lib);
     var libFiles = [];
 
-    if (fs.existsSync(mainFileDir + '/dist')) {
-      mainFileDir = mainFileDir + '/dist';
-    } else {
-      var depPackageBuffer = fs.readFileSync(mainFileDir + '/package.json');
-      var depPackage = JSON.parse(depPackageBuffer.toString());
 
-      if (depPackage.main) {
-        var mainFile = mainFileDir + '/' + depPackage.main;
-        var distDirPos;
+    if(!copyFullRepo){
+      if (fs.existsSync(mainFileDir + '/dist')) {
+        mainFileDir = mainFileDir + '/dist';
+      } else {
+        var depPackageBuffer = fs.readFileSync(mainFileDir + '/package.json');
+        var depPackage = JSON.parse(depPackageBuffer.toString());
 
-        distDirPos = mainFile.lastIndexOf('/dist/');
+        if (depPackage.main) {
+          var mainFile = mainFileDir + '/' + depPackage.main;
+          var distDirPos;
 
-        if (distDirPos !== -1) {
-          mainFileDir = mainFile.substring(0, distDirPos) + '/dist';
+          distDirPos = mainFile.lastIndexOf('/dist/');
+
+          if (distDirPos !== -1) {
+            mainFileDir = mainFile.substring(0, distDirPos) + '/dist';
+          }
         }
+      }
+    }else{
+      if (fs.existsSync(mainFileDir)) {
+        mainFileDir = mainFileDir;
+      } else {
+        // TODO: Unclear what happens here - kinda fallback logic - skipped for now.
+        console.error('mainFileDir not found!');
+
+        // var depPackageBuffer = fs.readFileSync(mainFileDir + '/package.json');
+        // var depPackage = JSON.parse(depPackageBuffer.toString());
+
+        // if (depPackage.main) {
+          // var mainFile = mainFileDir + '/' + depPackage.main;
+          // var distDirPos;
+
+          // distDirPos = mainFile.lastIndexOf('/dist/');
+
+          // if (distDirPos !== -1) {
+          //   mainFileDir = mainFile.substring(0, distDirPos) + '/dist';
+          // }
+        // }
       }
     }
 
